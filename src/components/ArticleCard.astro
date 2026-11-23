@@ -1,0 +1,171 @@
+---
+import type { ScoredArticle } from '../lib/scorer';
+import { getInterestLabel } from '../lib/scorer';
+import { getSourceById } from '../config/sources';
+
+interface Props {
+  article: ScoredArticle;
+}
+
+const { article } = Astro.props;
+
+const source = getSourceById(article.sourceId);
+const sourceColor = source?.color || '#666';
+
+const pubDate = new Date(article.pubDate);
+const formattedDate = pubDate.toLocaleDateString('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+---
+
+<article 
+  class="card" 
+  data-interests={article.matchedInterests.join(',')}
+  data-source={article.sourceId}
+>
+  <div class="card-content">
+    <div class="meta">
+      <span class="source" style={`color: ${sourceColor}`}>
+        {article.sourceName}
+      </span>
+      <span class="separator">|</span>
+      <span class="date">{formattedDate}</span>
+      {article.author && (
+        <>
+          <span class="separator">|</span>
+          <span class="author">{article.author}</span>
+        </>
+      )}
+    </div>
+
+    <h2 class="title">
+      <a href={article.link} target="_blank" rel="noopener noreferrer">
+        {article.title}
+      </a>
+    </h2>
+
+    {article.description && (
+      <p class="description">{article.description}</p>
+    )}
+
+    <div class="tags">
+      {article.matchedInterests.map((interestId) => (
+        <span class="tag" data-interest={interestId}>
+          {getInterestLabel(interestId)}
+        </span>
+      ))}
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    background: white;
+    border-radius: 4px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .card.hidden {
+    display: none;
+  }
+
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #666;
+  }
+
+  .source {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.75rem;
+  }
+
+  .separator {
+    color: #ccc;
+  }
+
+  .author {
+    font-style: italic;
+  }
+
+  .title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .title a {
+    color: #1a1a1a;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .title a:hover {
+    color: #E71D36;
+  }
+
+  .description {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #444;
+    margin: 0;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    background: #f0f0f0;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  @media (max-width: 600px) {
+    .card {
+      padding: 1.25rem;
+    }
+
+    .title {
+      font-size: 1.1875rem;
+    }
+
+    .description {
+      font-size: 0.875rem;
+    }
+
+    .meta {
+      font-size: 0.75rem;
+    }
+  }
+</style>

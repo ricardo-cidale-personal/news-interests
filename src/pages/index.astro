@@ -1,0 +1,150 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import FilterBar from '../components/FilterBar.astro';
+import { fetchAllFeeds } from '../lib/feed-fetcher';
+import { scoreAndRankArticles, type ScoredArticle } from '../lib/scorer';
+import { getEnabledSources } from '../config/sources';
+import { INTERESTS } from '../config/interests';
+
+const sources = getEnabledSources();
+const rawArticles = await fetchAllFeeds(sources);
+const articles = scoreAndRankArticles(rawArticles);
+
+const buildTime = new Date().toLocaleString('en-US', {
+  timeZone: 'America/Chicago',
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
+const interests = INTERESTS.map(i => ({ id: i.id, label: i.label }));
+---
+
+<Layout title="Ricardo's Reading List">
+  <main class="container">
+    <header class="header">
+      <h1>Reading List</h1>
+      <p class="subtitle">Curated long-form journalism for Ricardo Cidale</p>
+      <p class="build-time">Last updated: {buildTime} CT</p>
+    </header>
+
+    <FilterBar 
+      interests={interests} 
+      sources={sources.map(s => ({ id: s.id, name: s.name, color: s.color }))} 
+    />
+
+    <section class="articles" id="articles-container">
+      {articles.length === 0 ? (
+        <p class="no-articles">No articles found matching your interests.</p>
+      ) : (
+        articles.map((article) => (
+          <ArticleCard article={article} />
+        ))
+      )}
+    </section>
+
+    <footer class="footer">
+      <p>
+        Showing {articles.length} articles from {sources.map(s => s.name).join(' and ')}
+      </p>
+      <a href="/" class="refresh-link">Refresh feed</a>
+    </footer>
+  </main>
+
+  <script define:vars={{ articlesData: articles }}>
+    window.allArticles = articlesData;
+  </script>
+  <script src="../scripts/filter.ts"></script>
+</Layout>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    font-family: 'Source Sans 3', -apple-system, sans-serif;
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .build-time {
+    font-family: 'Source Sans 3', -apple-system, sans-serif;
+    font-size: 0.875rem;
+    color: #999;
+    margin: 0;
+  }
+
+  .articles {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .no-articles {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 3rem 1rem;
+  }
+
+  .footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e5e5;
+    text-align: center;
+    color: #666;
+    font-size: 0.875rem;
+  }
+
+  .footer p {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .refresh-link {
+    color: #1a1a1a;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .refresh-link:hover {
+    color: #E71D36;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 1rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+    }
+  }
+</style>
